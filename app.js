@@ -51,11 +51,19 @@ function createProjectCard(p, section){
 
   const codeBtn = p.sourceLink
     ? `<a class="btn btn-sm btn-outline-light" href="${p.sourceLink}" target="_blank" rel="noopener"><i class="fa-solid fa-code me-2"></i>Code</a>`
-    : `<button class="btn btn-sm btn-outline-light" disabled><i class="fa-solid fa-code me-2"></i>Code</button>`;
+    : '';
 
   const demoBtn = p.viewLink
     ? `<a class="btn btn-sm btn-outline-light" href="${p.viewLink}" target="_blank" rel="noopener"><i class="fa-solid fa-play me-2"></i>Demo</a>`
-    : `<button class="btn btn-sm btn-outline-light" disabled style="opacity:.6"><i class="fa-solid fa-play me-2"></i>Demo</button>`;
+    : '';
+
+  const productBtn = p.productLink
+    ? `<a class="btn btn-sm btn-outline-light" href="${p.productLink}" target="_blank" rel="noopener"><i class="fa-solid fa-box-open me-2"></i>Product</a>`
+    : '';
+
+  const documentationBtn = p.documentationLink
+    ? `<a class="btn btn-sm btn-outline-light" href="${p.documentationLink}" target="_blank" rel="noopener"><i class="fa-solid fa-book me-2"></i>Documentation</a>`
+    : '';
 
   const tags = (p.utilized || []).map(t => `<span class="tag">${t}</span>`).join('');
   const images = projectImages(p);
@@ -73,10 +81,12 @@ function createProjectCard(p, section){
         </div>
         <p class="card-text muted card-desc" style="white-space:pre-line">${p.description || ''}</p>
         <div class="mt-auto">
-          <div class="mb-3">${tags}</div>
+          <div class="mb-3 mt-3 d-flex gap-2 flex-wrap">${tags}</div>
           <div class="d-flex gap-2">
             ${codeBtn}
             ${demoBtn}
+            ${productBtn}
+            ${documentationBtn}
           </div>
         </div>
       </div>
@@ -177,14 +187,14 @@ const EXPERIENCE = [
     role: "Software Engineer",
     when: "Mar 2023 – Present",
     bullets: [
-      "Worked across a diverse stack, including <strong>.NET Framework (4.x & 8.x), ASP.NET (MVC, Razor Pages), JavaScript, CSS, HTML, SQL Server, MongoDB, RabbitMQ, Angular (v9 & v19)</strong>.",
+      "Worked across a diverse stack, including <strong>.NET Framework (4.x), .NET 8.x, ASP.NET (MVC, Razor Pages), JavaScript, CSS, HTML, SQL Server, MongoDB, RabbitMQ, Angular (v9 & v19)</strong>.",
       "Resolved a wide range of <strong>bugs and development tasks</strong> across multiple systems, often <strong>taking ownership</strong> of tasks with minimal initial analysis and delivering effective solutions <strong>under tight deadlines</strong>.",
       "Delivered <strong>client-critical fixes</strong> and managed <strong>hotfix deployments</strong>, balancing speed with reliability.",
       "Contributed to <strong>monolithic MVC systems</strong>, <strong>API-driven microservices</strong>, and <strong>Angular web applications</strong>, applying <strong>Domain-Driven Design (DDD)</strong> and key software design patterns to ensure clean, scalable, and maintainable architecture.",
       "Developed Angular front-ends from <strong>Figma UI designs</strong>, ensuring visual accuracy and consistency using <strong>Angular Material</strong> and modular component structure.",
       "Created <strong>data migration tools</strong> to import and transform data from external files or databases into the system’s main database."
     ],
-    tags: ["C#", ".NET 4.x/8.x", "ASP.NET MVC", "Razor Pages", "Angular 9/19", "Angular Material", "SQL Server", "MongoDB", "RabbitMQ", "EF/EF Core", "LINQ", "Git"]
+    tags: ["C#", ".NET Framework (4.x)", ".NET 8.x", "ASP.NET MVC", "Razor Pages", "Angular 9/19", "Angular Material", "SQL Server", "MongoDB", "RabbitMQ", "EF/EF Core", "LINQ", "Git"]
   },
   {
     employer: "Hellenic Armed Forces | Dept. of Informatics & Research",
@@ -279,11 +289,12 @@ const CURRENT_PROJECTS = [
       "atlas_bake_3.png",
       "atlas_bake_4.png"
     ],
-    "sourceLink": "https://github.com/JohnDelta/atlas_bake_documentation",
+    "sourceLink": "",
     "viewLink": "",
+    "productLink": "https://superhivemarket.com/products/atlas-bake",
+    "documentationLink": "https://github.com/JohnDelta/atlas_bake_documentation",
     "description": `A Blender add-on that automates baking passes (Base Color, Metallic, Roughness, Normals, AO),
-packed outputs (e.g., Metallic+Smoothness), and export for game engines.
-\nBuilt for reliability: resumable jobs, logs, and clear UX.`,
+packed outputs (e.g., Metallic+Smoothness), and export for game engines.`,
     "utilized": ["Python", "Blender API", "Bake Texture", "Add-on"]
   }
 ];
@@ -305,6 +316,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink" : "https://github.com/JohnDelta/junior-workers",
     "viewLink" : "",
+    "productLink" : "",
+    "documentationLink" : "",
     "description" : `Junior Workers is a concept project of a professional networking web app platform used by undergraduate/postgraduate students and hirers. The main goal of the platform is to help both students and hirers cover their job search needs. Students can create their personal profiles and upload their CVs. Also, they can search job posts created by hirers. Hirers can search for students based on the position requirements they want to cover and create job posts to let students communicate with them.
 \nFor this project, I:
 - Developed REST API controllers utilizing CRUD functions with Java (JAXRS-Jersey)
@@ -333,6 +346,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink": "https://github.com/JohnDelta/gym_equipment",
     "viewLink": "",
+    "productLink" : "",
+    "documentationLink" : "",
     "description": `Concept e-shop for gym equipment with Spring MVC, JPA/Hibernate, JSP views.`,
     "utilized": ["Spring MVC", "Java", "JPA", "Hibernate", "MySQL", "JSTL"]
   },
@@ -356,6 +371,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink": "https://github.com/JohnDelta/9laugh_webapp",
     "viewLink": "",
+    "productLink" : "",
+    "documentationLink" : "",
     "description": `Entertainment platform (9gag-like) with Spring Boot REST API, JWT auth and React client.`,
     "utilized": ["Spring Boot", "JWT", "REST API", "React", "MySQL", "Maven"]
   },
@@ -384,6 +401,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink": "https://github.com/JohnDelta/ExaminationCenters",
     "viewLink": "",
+    "productLink" : "",
+    "documentationLink" : "",
     "description": `Online examination system with roles (Admin/Supervisor/Student), results, and Excel imports.`,
     "utilized": ["Java", "RESTful", "JSP", "Servlet", "Swing", "MySQL"]
   },
@@ -398,6 +417,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink": "https://github.com/JohnDelta/Issues",
     "viewLink": "",
+    "productLink" : "",
+    "documentationLink" : "",
     "description": `Simple ticketing app for internal issue reporting and triage.`,
     "utilized": ["PHP", "MySQL", "Bootstrap", "HTML5", "CSS", "JS"]
   },
@@ -414,6 +435,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink": "https://github.com/JohnDelta/LabExchange_WebApplication",
     "viewLink": "",
+    "productLink" : "",
+    "documentationLink" : "",
     "description": `Cloud-native lab enrollment app with microservices (Spring Boot), React UI, MongoDB, RabbitMQ; Docker/Kubernetes deploys.`,
     "utilized": ["React", "Spring Boot", "MongoDB", "RabbitMQ", "Docker", "Kubernetes"]
   },
@@ -428,6 +451,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink": "https://github.com/JohnDelta/biriba",
     "viewLink": "https://johndelta.github.io/biriba",
+    "productLink" : "",
+    "documentationLink" : "",
     "description": `React app to keep scores for the “Biriba” card game; uses Google Drive API for persistence.`,
     "utilized": ["React", "Google Drive API", "HTML5", "CSS"]
   },
@@ -440,6 +465,8 @@ const BACKLOG_PROJECTS = [
     ],
     "sourceLink": "https://github.com/JohnDelta/pomodoro-clock",
     "viewLink": "https://johndelta.github.io/pomodoro-clock",
+    "productLink" : "",
+    "documentationLink" : "",
     "description": `Responsive Pomodoro clock built in React with adjustable break lengths.`,
     "utilized": ["React", "HTML5", "CSS"]
   }

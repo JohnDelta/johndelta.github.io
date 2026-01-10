@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="ink">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -32,17 +32,17 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div id="navContent" class="collapse navbar-collapse">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto d-flex align-items-center gap-1">
                     <li class="nav-item"><a class="nav-link" href="#experience">Experience</a></li>
                     <li class="nav-item"><a class="nav-link" href="#recent">Work</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
-                    <li class="nav-item ms-3">
+                    <li class="nav-item ms-lg-3">
                         <a class="btn btn-outline-light" href="https://github.com/JohnDelta" target="_blank" rel="noopener">
                             <i class="fa-brands fa-github me-2"></i>
                             GitHub
                         </a>
                     </li>
-                    <li class="nav-item ms-2">
+                    <li class="nav-item">
                         <a class="btn btn-outline-light" href="https://www.linkedin.com/in/john-deligiannis-917736196/" target="_blank" rel="noopener">
                             <i class="fa-brands fa-linkedin me-2"></i>
                             LinkedIn
@@ -165,7 +165,7 @@
                         <div class="timeline" id="experienceTimeline"></div>
                     </div>
                     <div class="col-lg-4">
-                        <div class="card h-100 p-3">
+                        <div class="card p-3">
                             <h5 class="mb-2">Career Roadmap</h5>
                             <p class="muted mb-3">A quick view of my path and focus areas.</p>
                             <div class="d-flex flex-wrap gap-2 mb-3" id="roadmapChips"></div>
@@ -197,15 +197,15 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label class="form-label">Name</label>
-                                        <input class="form-control bg-transparent text-white" type="text" name="name" required>
+                                        <input class="form-control" type="text" name="name" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Email</label>
-                                        <input class="form-control bg-transparent text-white" type="email" name="email" required>
+                                        <input class="form-control" type="email" name="email" required>
                                     </div>
                                     <div class="col-12">
                                         <label class="form-label">Message</label>
-                                        <textarea class="form-control bg-transparent text-white" rows="4" name="message" required></textarea>
+                                        <textarea class="form-control" rows="4" name="message" required></textarea>
                                     </div>
                                     <div class="col-12">
                                         <button id="send-btn" class="btn btn-info">
@@ -262,7 +262,7 @@
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body pt-0 d-flex justify-content-center">
-                    <img id="galleryImg" class="img-fluid rounded-3 border" style="border-color:#263346" src="" alt="Project image" />
+                    <img id="galleryImg" class="img-fluid rounded-3 border" src="" alt="Project image" />
                 </div>
                 <div class="modal-footer border-0 d-flex justify-content-between">
                     <button class="btn btn-outline-light" id="prevImg"><i class="fa-solid fa-arrow-left-long me-2"></i>Prev</button>
