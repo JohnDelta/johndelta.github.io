@@ -292,7 +292,7 @@ const CURRENT_PROJECTS = [
     "sourceLink": "",
     "viewLink": "",
     "productLink": "https://superhivemarket.com/products/atlas-bake",
-    "documentationLink": "https://github.com/JohnDelta/atlas_bake_documentation",
+    "documentationLink": "https://johndelta.github.io/atlas_bake_documentation/",
     "description": `A Blender add-on that automates baking passes (Base Color, Metallic, Roughness, Normals, AO),
 packed outputs (e.g., Metallic+Smoothness), and export for game engines.`,
     "utilized": ["Python", "Blender API", "Bake Texture", "Add-on"]
