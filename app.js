@@ -1,506 +1,337 @@
-// ===== UTILITIES =====
-const $  = (sel, root = document) => root.querySelector(sel);
-const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
-
-// ===== SIMPLE CLAMP (pixel height) =====
-const DESC_MAX_PX = 140;
-
-function setupClamp(desc){
-  desc.style.setProperty('--desc-max', `${DESC_MAX_PX}px`);
-  const needs = desc.scrollHeight > DESC_MAX_PX;
-  let toggle = desc.nextElementSibling && desc.nextElementSibling.classList?.contains('more-link')
-    ? desc.nextElementSibling : null;
-  if (needs){
-    desc.classList.add('clamped');
-    if (!toggle){
-      toggle = document.createElement('button');
-      toggle.type = 'button';
-      toggle.className = 'more-link mb-3';
-      toggle.textContent = 'More';
-      toggle.addEventListener('click', () => {
-        const expanded = desc.classList.toggle('expanded');
-        desc.classList.toggle('clamped', !expanded);
-        toggle.textContent = expanded ? 'Less' : 'More';
-      });
-      desc.insertAdjacentElement('afterend', toggle);
-    }
-  } else {
-    desc.classList.remove('clamped','expanded');
-    if (toggle) toggle.remove();
-  }
-}
-
-function clampAll(root = document){
-  root.querySelectorAll('.card-desc').forEach(setupClamp);
-}
-
-// ===== PROJECT CARD =====
-
-const IMAGES_PATH = './assets/images';
-
-function projectImages(p) {
-  // Fallback to placeholder if missing/empty
-  return (p && Array.isArray(p.images) && p.images.length)
-    ? p.images
-    : ['placeholder_0.png'];
-}
-
-function createProjectCard(p, section){
-  const col = document.createElement('div');
-  col.className = 'col';
-
-  const codeBtn = p.sourceLink
-    ? `<a class="btn btn-sm btn-outline-light" href="${p.sourceLink}" target="_blank" rel="noopener"><i class="fa-solid fa-code me-2"></i>Code</a>`
-    : '';
-
-  const demoBtn = p.viewLink
-    ? `<a class="btn btn-sm btn-outline-light" href="${p.viewLink}" target="_blank" rel="noopener"><i class="fa-solid fa-play me-2"></i>Demo</a>`
-    : '';
-
-  const productBtn = p.productLink
-    ? `<a class="btn btn-sm btn-outline-light" href="${p.productLink}" target="_blank" rel="noopener"><i class="fa-solid fa-box-open me-2"></i>Product</a>`
-    : '';
-
-  const documentationBtn = p.documentationLink
-    ? `<a class="btn btn-sm btn-outline-light" href="${p.documentationLink}" target="_blank" rel="noopener"><i class="fa-solid fa-book me-2"></i>Documentation</a>`
-    : '';
-
-  const tags = (p.utilized || []).map(t => `<span class="tag">${t}</span>`).join('');
-  const images = projectImages(p);
-  const firstImg = IMAGES_PATH + '/' + images[0];
-
-  col.innerHTML = `
-    <div class="card h-100 card-float">
-      <img class="card-img-top gallery-thumb" src="${firstImg}" alt="${p.title} preview" loading="lazy">
-      <div class="card-body d-flex flex-column">
-        <div class="d-flex justify-content-between align-items-start mb-2">
-          <h5 class="card-title mb-0">${p.title}</h5>
-          <div class="project-badges">
-            ${section === 'recent' ? '<span class="badge text-bg-info">Recent</span>' : '<span class="badge text-bg-secondary">Legacy</span>'}
-          </div>
-        </div>
-        <p class="card-text muted card-desc" style="white-space:pre-line">${p.description || ''}</p>
-        <div class="mt-auto">
-          <div class="mb-3 mt-3 d-flex gap-2 flex-wrap">${tags}</div>
-          <div class="d-flex gap-2">
-            ${codeBtn}
-            ${demoBtn}
-            ${productBtn}
-            ${documentationBtn}
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  col.querySelector('.gallery-thumb').addEventListener('click', () => openGallery(p));
-  return col;
-}
-
-// ===== RENDERERS =====
-function renderProjects(){
-  const recentWrap  = $('#recentGrid');
-  const backlogWrap = $('#backlogGrid');
-  recentWrap.innerHTML  = '';
-  backlogWrap.innerHTML = '';
-  CURRENT_PROJECTS.forEach(p => recentWrap.appendChild(createProjectCard(p, 'recent')));
-  BACKLOG_PROJECTS.forEach(p => backlogWrap.appendChild(createProjectCard(p, 'backlog')));
-  // clamp visible section now (recent grid)
-  clampAll(recentWrap);
-  // if backlog is already visible (has 'show'), clamp it; otherwise, wait for collapse event
-  const backlogCollapse = $('#backlogGridWrap');
-  if (backlogCollapse?.classList.contains('show')) {
-    clampAll(backlogCollapse);
-  } else if (backlogCollapse) {
-    backlogCollapse.addEventListener('shown.bs.collapse', () => {
-      // run after layout
-      requestAnimationFrame(() => clampAll(backlogCollapse));
-    });
-  }
-}
-
-function applyFilter(buttonLocator, cardId, kind){
-  const cards = $$('#' + cardId + ' .card');
-  cards.forEach(card => {
-    const text = card.textContent.toLowerCase();
-    card.parentElement.style.display = (kind === 'all' || text.includes(kind)) ? '' : 'none';
-  });
-  $$(buttonLocator).forEach(b => b.classList.toggle('active', b.dataset.filter === kind));
-  // re-evaluate clamps in the recent grid after filtering
-  clampAll($('#' + cardId));
-}
-
-// ===== GALLERY =====
-let galleryState = { project: null, index: 0 };
-
-function openGallery(project){
-  galleryState.project = project;
-  galleryState.index = 0;
-  $('#galleryTitle').textContent = project.title;
-  updateGalleryImage();
-  new bootstrap.Modal($('#galleryModal')).show();
-}
-
-function updateGalleryImage(){
-  const p = galleryState.project;
-  const images = projectImages(p);
-  const count = images.length;
-
-  // clamp index
-  galleryState.index = Math.max(0, Math.min(galleryState.index, count - 1));
-  const idx = galleryState.index;
-
-  $('#galleryImg').src = IMAGES_PATH + '/' + images[idx];
-  $('#galleryCounter').textContent = `${idx + 1} / ${count}`;
-  $('#prevImg').disabled = (idx === 0);
-  $('#nextImg').disabled = (idx >= count - 1);
-}
-
-$('#prevImg').addEventListener('click', () => {
-  galleryState.index = Math.max(0, galleryState.index - 1);
-  updateGalleryImage();
-});
-
-$('#nextImg').addEventListener('click', () => {
-  const count = projectImages(galleryState.project).length;
-  galleryState.index = Math.min(count - 1, galleryState.index + 1);
-  updateGalleryImage();
-});
-
-// ===== EVENTS =====
-
-$$('.recent-filter-btns .btn').forEach(btn => {
-  btn.addEventListener('click', () => applyFilter('.recent-filter-btns .btn', 'recentGrid', btn.dataset.filter));
-});
-
-$$('.backlog-filter-btns .btn').forEach(btn => {
-  btn.addEventListener('click', () => applyFilter('.backlog-filter-btns .btn', 'backlogGrid', btn.dataset.filter));
-});
-
-// year
-$('#year').textContent = new Date().getFullYear();
-
-// ===== EXPERIENCE DATA & RENDERER =====
-const EXPERIENCE = [
-  {
-    employer: "Dataverse Ltd. | Athens, Greece",
-    role: "Software Engineer",
-    when: "Mar 2023 – Present",
-    bullets: [
-      "Worked across a diverse stack, including <strong>.NET Framework (4.x), .NET 8.x, ASP.NET (MVC, Razor Pages), JavaScript, CSS, HTML, SQL Server, MongoDB, RabbitMQ, Angular (v9 & v19)</strong>.",
-      "Resolved a wide range of <strong>bugs and development tasks</strong> across multiple systems, often <strong>taking ownership</strong> of tasks with minimal initial analysis and delivering effective solutions <strong>under tight deadlines</strong>.",
-      "Delivered <strong>client-critical fixes</strong> and managed <strong>hotfix deployments</strong>, balancing speed with reliability.",
-      "Contributed to <strong>monolithic MVC systems</strong>, <strong>API-driven microservices</strong>, and <strong>Angular web applications</strong>, applying <strong>Domain-Driven Design (DDD)</strong> and key software design patterns to ensure clean, scalable, and maintainable architecture.",
-      "Developed Angular front-ends from <strong>Figma UI designs</strong>, ensuring visual accuracy and consistency using <strong>Angular Material</strong> and modular component structure.",
-      "Created <strong>data migration tools</strong> to import and transform data from external files or databases into the system’s main database."
-    ],
-    tags: ["C#", ".NET Framework (4.x)", ".NET 8.x", "ASP.NET MVC", "Razor Pages", "Angular 9/19", "Angular Material", "SQL Server", "MongoDB", "RabbitMQ", "EF/EF Core", "LINQ", "Git"]
-  },
-  {
-    employer: "Hellenic Armed Forces | Dept. of Informatics & Research",
-    role: "IT Support Technician | Call Center Dispatcher",
-    when: "Mar 2022 - Jan 2023",
-    bullets: [
-      "Completed <strong>mandatory military service</strong> while providing <strong>technical IT support</strong> to internal departments."
-    ],
-    tags: ["IT Support", "Helpdesk"]
-  },
-  {
-    employer: "Megaventory Inc. | Athens, Greece",
-    role: "Software Engineer",
-    when: "Dec 2020 – Oct 2021",
-    bullets: [
-      "Contributed to the <strong>analysis, design, and development</strong> of projects within the company’s internal systems.",
-      "Resolved a variety of <strong>backlog issues</strong> across all layers of the application stack, with a focus on <strong>code refactoring</strong> and cleanup aligned with clean code and SOLID principles.",
-      "<strong>Redesigned and refactored key components</strong> of the application's user interface, implementing <strong>modern design approaches</strong> and enhancing usability with additional utilities.",
-      "Conducted <strong>code reviews and pull request analysis</strong>, ensuring code quality and adherence to best practices.",
-      "Provided <strong>technical support</strong> to customers by analyzing reported issues, <strong>debugging</strong> the application, and delivering effective resolutions."
-    ],
-    tags: [".NET 4.x", "VB.NET", "ASP.NET Web Forms", "Entity Framework", "SQL Server", "DevExpress", "JavaScript", "jQuery", "HTML", "CSS", "Git/GitHub"]
-  }
-];
-
-function renderExperience(){
-  const wrap = document.getElementById('experienceTimeline');
-  if (!wrap) return;
-  wrap.innerHTML = '';
-  EXPERIENCE.forEach(item => {
-    const el = document.createElement('div');
-    el.className = 'timeline-item';
-    const bullets = item.bullets.map(b => `<li>${b}</li>`).join('');
-    const tags = (item.tags||[]).map(t => `<span class="tag">${t}</span>`).join('');
-    el.innerHTML = `
-      <div class="card p-3">
-        <div class="d-flex justify-content-between flex-wrap gap-2">
-          <div>
-            <div class="employer">${item.employer}</div>
-            <div class="role">${item.role}</div>
-          </div>
-          <div class="when">${item.when}</div>
-        </div>
-        ${bullets ? `<ul class="mt-2 mb-2 muted">${bullets}</ul>` : ''}
-        ${tags ? `<div class="d-flex flex-wrap gap-2">${tags}</div>` : ''}
-      </div>
-    `;
-    wrap.appendChild(el);
-  });
-
-  // Roadmap (right column)
-  const chips = document.getElementById('roadmapChips');
-  const tags1 = document.getElementById('roadmapTags_tags1'); 
-  const tags2 = document.getElementById('roadmapTags_tags2');
-  if (chips){
-    chips.innerHTML = `
-      <span class="chip">2020–2021 • Megaventory</span>
-      <span class="chip">Mar 2022 • Military (fulfilled)</span>
-      <span class="chip">2023–Now • Dataverse</span>
-    `;
-  }
-  if (tags1){
-    tags1.innerHTML = `
-      <span class="tag">.NET (4.x, 8.x)</span>
-      <span class="tag">ASP.NET</span>
-      <span class="tag">C#</span>
-      <span class="tag">NoSQL</span>
-      <span class="tag">SQL</span>
-      <span class="tag">Javascript</span>
-      <span class="tag">TypeScript</span>
-      <span class="tag">Angular (v9, v19)</span>
-    `;
-  }
-  if (tags2) {
-    tags2.innerHTML = `
-      <span class="tag">MVC</span>
-      <span class="tag">SOLID</span>
-      <span class="tag">DDD</span>
-      <span class="tag">Clean Code</span>
-    `;
-  }
-}
+const ASSET = 'https://johndelta.github.io/assets/images/';
 
 const CURRENT_PROJECTS = [
   {
-    "title": "Atlas Bake - Smart Texture Baker",
-    "name": "atlas_bake",
-    "images": [
-      "atlas_bake_0.gif",
-      "atlas_bake_1.png",
-      "atlas_bake_2.png",
-      "atlas_bake_3.png",
-      "atlas_bake_4.png"
-    ],
-    "sourceLink": "",
-    "viewLink": "",
-    "productLink": "https://superhivemarket.com/products/atlas-bake",
-    "documentationLink": "https://johndelta.github.io/atlas_bake_documentation/",
-    "description": `A Blender add-on that automates baking passes (Base Color, Metallic, Roughness, Normals, AO),
-packed outputs (e.g., Metallic+Smoothness), and export for game engines.`,
-    "utilized": ["Python", "Blender API", "Bake Texture", "Add-on"]
+    title: "Atlas Bake — Smart Texture Baker",
+    images: ["atlas_bake_0.gif","atlas_bake_1.png","atlas_bake_2.png","atlas_bake_3.png","atlas_bake_4.png"],
+    tags: ["Python", "Blender API", "Bake Texture", "Add-on"],
+    filterTags: "add-on python blender",
+    badge: "recent",
+    desc: "A Blender add-on that automates baking passes (Base Color, Metallic, Roughness, Normals, AO), packed outputs (e.g., Metallic+Smoothness), and export for game engines.",
+    sourceLink: "",
+    viewLink: "",
+    productLink: "https://superhivemarket.com/products/atlas-bake",
+    documentationLink: "https://johndelta.github.io/atlas_bake_documentation/"
   }
 ];
 
 const BACKLOG_PROJECTS = [
   {
-    "title" : "Junior Workers",
-    "name": "junior-workers",
-    "images" : [
-      "junior-workers_0.jpg",
-      "junior-workers_1.jpg",
-      "junior-workers_2.jpg",
-      "junior-workers_3.jpg",
-      "junior-workers_4.jpg",
-      "junior-workers_5.jpg",
-      "junior-workers_6.jpg",
-      "junior-workers_7.jpg",
-      "junior-workers_8.jpg"
-    ],
-    "sourceLink" : "https://github.com/JohnDelta/junior-workers",
-    "viewLink" : "",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description" : `Junior Workers is a concept project of a professional networking web app platform used by undergraduate/postgraduate students and hirers. The main goal of the platform is to help both students and hirers cover their job search needs. Students can create their personal profiles and upload their CVs. Also, they can search job posts created by hirers. Hirers can search for students based on the position requirements they want to cover and create job posts to let students communicate with them.
-\nFor this project, I:
-- Developed REST API controllers utilizing CRUD functions with Java (JAXRS-Jersey)
-- Applied JWT to ensure authentication
-- Developed a web application using React to handle the users' views
-- Utilized react-router for asynchronous routing through the web application
-- Designed normalized relational database`,
-    "utilized" : ["RESTful API", "Java", "Maven", "MySQL", "Web App", "React","Javascript","HTML5","CSS"]
+    title: "Junior Workers",
+    images: ["junior-workers_0.jpg","junior-workers_1.jpg","junior-workers_2.jpg","junior-workers_3.jpg","junior-workers_4.jpg","junior-workers_5.jpg","junior-workers_6.jpg","junior-workers_7.jpg","junior-workers_8.jpg"],
+    tags: ["RESTful API", "Java", "Maven", "MySQL", "React", "JavaScript", "HTML5", "CSS"],
+    filterTags: "api java react sql crud restful",
+    badge: "legacy",
+    desc: "Concept professional networking web app for undergraduate/postgraduate students and hirers. Students create profiles, upload CVs and search job posts. Hirers search students and create job posts.\n\nFor this project, I:\n— Developed REST API controllers with CRUD functions using Java (JAXRS-Jersey)\n— Applied JWT for authentication\n— Developed a React web application with react-router for async routing\n— Designed normalized relational database",
+    sourceLink: "https://github.com/JohnDelta/junior-workers",
+    viewLink: "", productLink: "", documentationLink: ""
   },
   {
-    "title": "Gym Equipment",
-    "name": "gymequipment",
-    "images": [
-      "gymequipment_0.jpg",
-      "gymequipment_1.jpg",
-      "gymequipment_2.jpg",
-      "gymequipment_3.jpg",
-      "gymequipment_4.jpg",
-      "gymequipment_5.jpg",
-      "gymequipment_6.jpg",
-      "gymequipment_7.jpg",
-      "gymequipment_8.jpg",
-      "gymequipment_9.jpg",
-      "gymequipment_10.jpg",
-      "gymequipment_11.jpg"
-    ],
-    "sourceLink": "https://github.com/JohnDelta/gym_equipment",
-    "viewLink": "",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description": `Concept e-shop for gym equipment with Spring MVC, JPA/Hibernate, JSP views.`,
-    "utilized": ["Spring MVC", "Java", "JPA", "Hibernate", "MySQL", "JSTL"]
+    title: "Gym Equipment",
+    images: ["gymequipment_0.jpg","gymequipment_1.jpg","gymequipment_2.jpg","gymequipment_3.jpg","gymequipment_4.jpg","gymequipment_5.jpg","gymequipment_6.jpg","gymequipment_7.jpg","gymequipment_8.jpg","gymequipment_9.jpg","gymequipment_10.jpg","gymequipment_11.jpg"],
+    tags: ["Spring MVC", "Java", "JPA", "Hibernate", "MySQL", "JSTL"],
+    filterTags: "spring java sql crud hibernate",
+    badge: "legacy",
+    desc: "Concept e-shop for gym equipment with Spring MVC, JPA/Hibernate, JSP views.",
+    sourceLink: "https://github.com/JohnDelta/gym_equipment",
+    viewLink: "", productLink: "", documentationLink: ""
   },
   {
-    "title": "9laugh",
-    "name": "9laugh",
-    "images": [
-      "9laugh_0.jpg",
-      "9laugh_1.jpg",
-      "9laugh_2.jpg",
-      "9laugh_3.jpg",
-      "9laugh_4.jpg",
-      "9laugh_5.jpg",
-      "9laugh_6.jpg",
-      "9laugh_7.jpg",
-      "9laugh_8.jpg",
-      "9laugh_9.jpg",
-      "9laugh_10.jpg",
-      "9laugh_11.jpg",
-      "9laugh_12.jpg"
-    ],
-    "sourceLink": "https://github.com/JohnDelta/9laugh_webapp",
-    "viewLink": "",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description": `Entertainment platform (9gag-like) with Spring Boot REST API, JWT auth and React client.`,
-    "utilized": ["Spring Boot", "JWT", "REST API", "React", "MySQL", "Maven"]
+    title: "9laugh",
+    images: ["9laugh_0.jpg","9laugh_1.jpg","9laugh_2.jpg","9laugh_3.jpg","9laugh_4.jpg","9laugh_5.jpg","9laugh_6.jpg","9laugh_7.jpg","9laugh_8.jpg","9laugh_9.jpg","9laugh_10.jpg","9laugh_11.jpg","9laugh_12.jpg"],
+    tags: ["Spring Boot", "JWT", "REST API", "React", "MySQL", "Maven"],
+    filterTags: "spring java sql react api crud",
+    badge: "legacy",
+    desc: "Entertainment platform (9gag-like) with Spring Boot REST API, JWT auth and React client.",
+    sourceLink: "https://github.com/JohnDelta/9laugh_webapp",
+    viewLink: "", productLink: "", documentationLink: ""
   },
   {
-    "title": "Examination Centers",
-    "name": "examinationcenters",
-    "images": [
-      "examinationcenters_0.jpg", 
-      "examinationcenters_1.jpg", 
-      "examinationcenters_2.jpg", 
-      "examinationcenters_3.jpg", 
-      "examinationcenters_4.jpg", 
-      "examinationcenters_5.jpg", 
-      "examinationcenters_6.jpg", 
-      "examinationcenters_7.jpg", 
-      "examinationcenters_8.jpg", 
-      "examinationcenters_9.jpg", 
-      "examinationcenters_10.jpg", 
-      "examinationcenters_11.jpg", 
-      "examinationcenters_12.jpg", 
-      "examinationcenters_13.jpg", 
-      "examinationcenters_14.jpg", 
-      "examinationcenters_15.jpg", 
-      "examinationcenters_16.jpg", 
-      "examinationcenters_17.jpg"
-    ],
-    "sourceLink": "https://github.com/JohnDelta/ExaminationCenters",
-    "viewLink": "",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description": `Online examination system with roles (Admin/Supervisor/Student), results, and Excel imports.`,
-    "utilized": ["Java", "RESTful", "JSP", "Servlet", "Swing", "MySQL"]
+    title: "Examination Centers",
+    images: ["examinationcenters_0.jpg","examinationcenters_1.jpg","examinationcenters_2.jpg","examinationcenters_3.jpg","examinationcenters_4.jpg","examinationcenters_5.jpg","examinationcenters_6.jpg","examinationcenters_7.jpg","examinationcenters_8.jpg","examinationcenters_9.jpg","examinationcenters_10.jpg","examinationcenters_11.jpg","examinationcenters_12.jpg","examinationcenters_13.jpg","examinationcenters_14.jpg","examinationcenters_15.jpg","examinationcenters_16.jpg","examinationcenters_17.jpg"],
+    tags: ["Java", "RESTful", "JSP", "Servlet", "Swing", "MySQL"],
+    filterTags: "java api sql crud",
+    badge: "legacy",
+    desc: "Online examination system with roles (Admin/Supervisor/Student), results, and Excel imports.",
+    sourceLink: "https://github.com/JohnDelta/ExaminationCenters",
+    viewLink: "", productLink: "", documentationLink: ""
   },
   {
-    "title": "Ticket Support System",
-    "name": "issues",
-    "images": [
-      "issues_0.jpg", 
-      "issues_1.jpg", 
-      "issues_2.jpg", 
-      "issues_3.jpg"
-    ],
-    "sourceLink": "https://github.com/JohnDelta/Issues",
-    "viewLink": "",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description": `Simple ticketing app for internal issue reporting and triage.`,
-    "utilized": ["PHP", "MySQL", "Bootstrap", "HTML5", "CSS", "JS"]
+    title: "Ticket Support System",
+    images: ["issues_0.jpg","issues_1.jpg","issues_2.jpg","issues_3.jpg"],
+    tags: ["PHP", "MySQL", "Bootstrap", "HTML5", "CSS", "JS"],
+    filterTags: "sql crud php",
+    badge: "legacy",
+    desc: "Simple ticketing app for internal issue reporting and triage.",
+    sourceLink: "https://github.com/JohnDelta/Issues",
+    viewLink: "", productLink: "", documentationLink: ""
   },
   {
-    "title": "Lab Exchanges",
-    "name": "lab-exchange",
-    "images": [
-      "lab-exchange_0.jpg", 
-      "lab-exchange_1.jpg", 
-      "lab-exchange_2.jpg", 
-      "lab-exchange_3.jpg", 
-      "lab-exchange_4.jpg", 
-      "lab-exchange_5.jpg"
-    ],
-    "sourceLink": "https://github.com/JohnDelta/LabExchange_WebApplication",
-    "viewLink": "",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description": `Cloud-native lab enrollment app with microservices (Spring Boot), React UI, MongoDB, RabbitMQ; Docker/Kubernetes deploys.`,
-    "utilized": ["React", "Spring Boot", "MongoDB", "RabbitMQ", "Docker", "Kubernetes"]
+    title: "Lab Exchanges",
+    images: ["lab-exchange_0.jpg","lab-exchange_1.jpg","lab-exchange_2.jpg","lab-exchange_3.jpg","lab-exchange_4.jpg","lab-exchange_5.jpg"],
+    tags: ["React", "Spring Boot", "MongoDB", "RabbitMQ", "Docker", "Kubernetes"],
+    filterTags: "react spring rabbitmq api",
+    badge: "legacy",
+    desc: "Cloud-native lab enrollment app with microservices (Spring Boot), React UI, MongoDB, RabbitMQ; Docker/Kubernetes deploys.",
+    sourceLink: "https://github.com/JohnDelta/LabExchange_WebApplication",
+    viewLink: "", productLink: "", documentationLink: ""
   },
   {
-    "title": "Biriba Notes",
-    "name": "biriba-notes",
-    "images": [
-      "biriba-notes_0.jpg", 
-      "biriba-notes_1.jpg", 
-      "biriba-notes_2.jpg", 
-      "biriba-notes_3.jpg"
-    ],
-    "sourceLink": "https://github.com/JohnDelta/biriba",
-    "viewLink": "https://johndelta.github.io/biriba",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description": `React app to keep scores for the “Biriba” card game; uses Google Drive API for persistence.`,
-    "utilized": ["React", "Google Drive API", "HTML5", "CSS"]
+    title: "Biriba Notes",
+    images: ["biriba-notes_0.jpg","biriba-notes_1.jpg","biriba-notes_2.jpg","biriba-notes_3.jpg"],
+    tags: ["React", "Google Drive API", "HTML5", "CSS"],
+    filterTags: "react api",
+    badge: "legacy",
+    desc: "React app to keep scores for the \"Biriba\" card game; uses Google Drive API for persistence.",
+    sourceLink: "https://github.com/JohnDelta/biriba",
+    viewLink: "https://johndelta.github.io/biriba",
+    productLink: "", documentationLink: ""
   },
   {
-    "title": "Pomodoro Clock",
-    "name": "pomodoro-clock",
-    "images": [
-      "pomodoro-clock_0.jpg", 
-      "pomodoro-clock_1.jpg"
-    ],
-    "sourceLink": "https://github.com/JohnDelta/pomodoro-clock",
-    "viewLink": "https://johndelta.github.io/pomodoro-clock",
-    "productLink" : "",
-    "documentationLink" : "",
-    "description": `Responsive Pomodoro clock built in React with adjustable break lengths.`,
-    "utilized": ["React", "HTML5", "CSS"]
+    title: "Pomodoro Clock",
+    images: ["pomodoro-clock_0.jpg","pomodoro-clock_1.jpg"],
+    tags: ["React", "HTML5", "CSS"],
+    filterTags: "react",
+    badge: "legacy",
+    desc: "Responsive Pomodoro clock built in React with adjustable break and session lengths.",
+    sourceLink: "https://github.com/JohnDelta/pomodoro-clock",
+    viewLink: "https://johndelta.github.io/pomodoro-clock",
+    productLink: "", documentationLink: ""
   }
 ];
 
-mailJsSetup = () => {
-  emailjs.init({ publicKey: "_Tnn0nvaK0_xhVrhy" });
-  const form = document.getElementById('contact-form');
-  const btn  = document.getElementById('send-btn');
-  const statusEl = document.getElementById('form-status');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    btn.disabled = true; 
-    statusEl.textContent = 'Sending…';
-    try {
-      await emailjs.sendForm('service_eigu1au', 'template_hrahja3', '#contact-form');
-      form.reset();
-      statusEl.textContent = 'Thanks! Your message was sent.';
-    } catch (err) {
-      console.error(err);
-      statusEl.textContent = 'Something went wrong. Please try again.';
-    } finally {
-      btn.disabled = false;
+const EXPERIENCE = [
+  {
+    company: "Dataverse Ltd. · Athens, Greece",
+    role: "Software Engineer",
+    period: "Mar 2023 – Present",
+    bullets: [
+      "Worked across a diverse stack including <strong>.NET Framework (4.x), .NET 8.x, ASP.NET (MVC, Razor Pages), JavaScript, CSS, HTML, SQL Server, MongoDB, RabbitMQ, Angular (v9 &amp; v19)</strong>.",
+      "Resolved a wide range of <strong>bugs and development tasks</strong> across multiple systems, often <strong>taking ownership</strong> with minimal initial analysis and delivering under <strong>tight deadlines</strong>.",
+      "Delivered <strong>client-critical fixes</strong> and managed <strong>hotfix deployments</strong>, balancing speed with reliability.",
+      "Contributed to <strong>monolithic MVC systems</strong>, <strong>API-driven microservices</strong>, and <strong>Angular web apps</strong>, applying <strong>Domain-Driven Design (DDD)</strong> and key software design patterns.",
+      "Developed Angular front-ends from <strong>Figma UI designs</strong> using <strong>Angular Material</strong> and modular component structure.",
+      "Created <strong>data migration tools</strong> to import and transform data from external files or databases."
+    ],
+    tags: ["C#", ".NET Framework (4.x)", ".NET 8.x", "ASP.NET MVC", "Razor Pages", "React 18", "Angular 9/19", "Angular Material", "SQL Server", "MongoDB", "RabbitMQ", "EF/EF Core", "LINQ", "Git"],
+    dim: false
+  },
+  {
+    company: "Hellenic Armed Forces · Dept. of Informatics &amp; Research",
+    role: "IT Support Technician · Call Center Dispatcher",
+    period: "Mar 2022 – Jan 2023",
+    bullets: ["Completed <strong>mandatory military service</strong> while providing <strong>technical IT support</strong> to internal departments."],
+    tags: ["IT Support", "Helpdesk"],
+    dim: true
+  },
+  {
+    company: "Megaventory Inc. · Athens, Greece",
+    role: "Software Engineer",
+    period: "Dec 2020 – Oct 2021",
+    bullets: [
+      "Contributed to the <strong>analysis, design, and development</strong> of projects within the company's internal systems.",
+      "Resolved <strong>backlog issues</strong> across all layers of the stack, with a focus on <strong>code refactoring</strong> and cleanup aligned with SOLID principles.",
+      "<strong>Redesigned and refactored key UI components</strong>, implementing modern design approaches and enhancing usability.",
+      "Conducted <strong>code reviews and pull request analysis</strong>, ensuring code quality and adherence to best practices.",
+      "Provided <strong>technical support</strong> to customers by analysing reported issues, debugging, and delivering effective resolutions."
+    ],
+    tags: [".NET 4.x", "VB.NET", "ASP.NET Web Forms", "Entity Framework", "SQL Server", "DevExpress", "JavaScript", "jQuery", "HTML", "CSS", "Git"],
+    dim: true
+  }
+];
+
+// ── BUILD CARD ──
+function buildCard(p) {
+  const card = document.createElement('div');
+  card.className = 'project-card';
+  card.dataset.filter = p.filterTags;
+
+  const tagsHtml = p.tags.map(t => `<span class="tag">${t}</span>`).join('');
+
+  const links = [];
+  if (p.sourceLink)        links.push(`<a class="project-link" href="${p.sourceLink}" target="_blank" rel="noopener"><i class="fa-solid fa-code"></i> Code</a>`);
+  if (p.viewLink)          links.push(`<a class="project-link" href="${p.viewLink}" target="_blank" rel="noopener"><i class="fa-solid fa-play"></i> Demo</a>`);
+  if (p.productLink)       links.push(`<a class="project-link" href="${p.productLink}" target="_blank" rel="noopener"><i class="fa-solid fa-box-open"></i> Product</a>`);
+  if (p.documentationLink) links.push(`<a class="project-link" href="${p.documentationLink}" target="_blank" rel="noopener"><i class="fa-solid fa-book"></i> Docs</a>`);
+  const footerHtml = links.length ? `<div class="project-footer">${links.join('')}</div>` : '';
+
+  const badge = p.badge === 'recent'
+    ? `<span class="project-badge badge-recent">Recent</span>`
+    : `<span class="project-badge badge-legacy">Legacy</span>`;
+
+  const firstImg = p.images && p.images.length ? ASSET + p.images[0] : null;
+  const thumbHtml = firstImg
+    ? `<img src="${firstImg}" alt="${p.title}" loading="lazy" style="cursor:pointer;" data-gallery-open onerror="this.closest('.project-thumb').innerHTML='<div class=\\'project-thumb-placeholder\\'>project screenshot</div>'">`
+    : `<div class="project-thumb-placeholder">project screenshot</div>`;
+
+  card.innerHTML = `
+    <div class="project-thumb">${thumbHtml}</div>
+    <div class="project-body">
+      <div class="project-header">
+        <span class="project-name">${p.title}</span>
+        ${badge}
+      </div>
+      <p class="project-desc">${p.desc.replace(/\n/g, '<br>')}</p>
+      <div class="tags">${tagsHtml}</div>
+    </div>
+    ${footerHtml}
+  `;
+
+  // Open gallery on thumb click
+  const thumb = card.querySelector('[data-gallery-open]');
+  if (thumb) thumb.addEventListener('click', () => openGallery(p));
+
+  // More/Less toggle
+  requestAnimationFrame(() => {
+    const descEl = card.querySelector('.project-desc');
+    if (descEl && descEl.scrollHeight > descEl.clientHeight + 6) {
+      const btn = document.createElement('button');
+      btn.className = 'more-btn';
+      btn.textContent = 'More';
+      btn.addEventListener('click', () => {
+        const expanded = descEl.classList.toggle('expanded');
+        btn.textContent = expanded ? 'Less' : 'More';
+      });
+      descEl.insertAdjacentElement('afterend', btn);
     }
   });
-};
 
-// boot
-renderProjects();
-renderExperience();
-mailJsSetup();
-applyFilter('.recent-filter-btns .btn', 'recentGrid', 'all');
-applyFilter('.backlog-filter-btns .btn', 'backlogGrid', 'all');
+  return card;
+}
 
-window.addEventListener('resize', (() => {
-  let t; return () => { clearTimeout(t); t = setTimeout(() => clampAll(document), 120); };
-})());
+function renderGrid(projects, gridId) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  projects.forEach(p => grid.appendChild(buildCard(p)));
+}
+
+renderGrid(CURRENT_PROJECTS, 'recent-grid');
+renderGrid(BACKLOG_PROJECTS, 'legacy-grid');
+
+// ── EXPERIENCE ──
+const expTimeline = document.getElementById('experience-timeline');
+EXPERIENCE.forEach((item, i) => {
+  const el = document.createElement('div');
+  el.className = 'timeline-item';
+  const bullets = item.bullets.map(b => `<li>${b}</li>`).join('');
+  const tags = item.tags.map(t => `<span class="tag">${t}</span>`).join('');
+  el.innerHTML = `
+    <div class="timeline-track">
+      <div class="timeline-dot${item.dim ? ' dim' : ''}"></div>
+        <div class="timeline-line"></div>
+    </div>
+    <div class="timeline-body">
+      <div class="timeline-header">
+        <span class="timeline-company">${item.company}</span>
+        <span class="timeline-period">${item.period}</span>
+      </div>
+      <div class="timeline-role">${item.role}</div>
+      ${bullets ? `<ul class="timeline-bullets">${bullets}</ul>` : ''}
+      <div class="tags">${tags}</div>
+    </div>
+  `;
+  expTimeline.appendChild(el);
+});
+
+// ── GALLERY ──
+const galleryModal = document.getElementById('gallery-modal');
+const galleryImg   = document.getElementById('gallery-img');
+const galleryTitle = document.getElementById('gallery-title');
+const galleryCounter = document.getElementById('gallery-counter');
+const galleryPrev  = document.getElementById('gallery-prev');
+const galleryNext  = document.getElementById('gallery-next');
+let galleryState   = { images: [], index: 0 };
+
+function galleryUpdate() {
+  const { images, index } = galleryState;
+  galleryImg.src = ASSET + images[index];
+  galleryCounter.textContent = `${index + 1} / ${images.length}`;
+  galleryPrev.style.opacity = index === 0 ? '0.3' : '1';
+  galleryPrev.style.pointerEvents = index === 0 ? 'none' : '';
+  galleryNext.style.opacity = index === images.length - 1 ? '0.3' : '1';
+  galleryNext.style.pointerEvents = index === images.length - 1 ? 'none' : '';
+}
+
+function openGallery(p) {
+  galleryState = { images: p.images, index: 0 };
+  galleryTitle.textContent = p.title;
+  galleryUpdate();
+  galleryModal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGallery() {
+  galleryModal.style.display = 'none';
+  document.body.style.overflow = '';
+  galleryImg.src = '';
+}
+
+galleryPrev.addEventListener('click', () => {
+  if (galleryState.index > 0) { galleryState.index--; galleryUpdate(); }
+});
+galleryNext.addEventListener('click', () => {
+  if (galleryState.index < galleryState.images.length - 1) { galleryState.index++; galleryUpdate(); }
+});
+document.getElementById('gallery-close').addEventListener('click', closeGallery);
+galleryModal.addEventListener('click', e => { if (e.target === galleryModal) closeGallery(); });
+document.addEventListener('keydown', e => {
+  if (galleryModal.style.display !== 'flex') return;
+  if (e.key === 'Escape') closeGallery();
+  if (e.key === 'ArrowLeft' && galleryState.index > 0) { galleryState.index--; galleryUpdate(); }
+  if (e.key === 'ArrowRight' && galleryState.index < galleryState.images.length - 1) { galleryState.index++; galleryUpdate(); }
+});
+
+// ── FILTERS ──
+function setupFilter(barId, gridId) {
+  const btns = document.querySelectorAll('#' + barId + ' .filter-btn');
+  const getCards = () => document.querySelectorAll('#' + gridId + ' .project-card');
+  btns.forEach(btn => btn.addEventListener('click', () => {
+    btns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const f = btn.dataset.filter;
+    getCards().forEach(c => {
+      c.style.display = (f === 'all' || (c.dataset.filter || '').includes(f)) ? '' : 'none';
+    });
+  }));
+}
+setupFilter('recent-filters', 'recent-grid');
+setupFilter('legacy-filters', 'legacy-grid');
+
+// ── LEGACY TOGGLE ──
+let legacyOpen = false;
+const legacyWrap = document.getElementById('legacy-wrap');
+const toggleIcon = document.getElementById('toggle-icon');
+document.getElementById('legacy-toggle').addEventListener('click', () => {
+  legacyOpen = !legacyOpen;
+  legacyWrap.style.maxHeight = legacyOpen ? legacyWrap.scrollHeight + 'px' : '0';
+  legacyWrap.style.opacity = legacyOpen ? '1' : '0';
+  toggleIcon.classList.toggle('open', legacyOpen);
+});
+
+// Recalc legacy height on resize
+window.addEventListener('resize', () => {
+  if (legacyOpen) legacyWrap.style.maxHeight = legacyWrap.scrollHeight + 'px';
+});
+
+// ── FADE IN ──
+const fadeObserver = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); fadeObserver.unobserve(e.target); } });
+}, { threshold: 0.07 });
+document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+// ── FOOTER YEAR ──
+document.getElementById('year').textContent = new Date().getFullYear();
+
+// ── EMAILJS ──
+emailjs.init({ publicKey: "_Tnn0nvaK0_xhVrhy" });
+document.getElementById('contact-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const btn = document.getElementById('send-btn');
+  const status = document.getElementById('form-status');
+  btn.disabled = true; status.textContent = 'Sending…';
+  try {
+    await emailjs.sendForm('service_eigu1au', 'template_hrahja3', '#contact-form');
+    e.target.reset(); status.textContent = 'Thanks! Your message was sent.';
+  } catch { status.textContent = 'Something went wrong. Please try again.'; }
+  finally { btn.disabled = false; }
+});
