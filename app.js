@@ -2,7 +2,7 @@ const ASSET = 'https://johndelta.github.io/assets/images/';
 
 const CURRENT_PROJECTS = [
   {
-    title: "Atlas Bake — Smart Texture Baker",
+    title: "Atlas Bake - A blender Add-on for Texture Baking",
     images: ["atlas_bake_0.gif","atlas_bake_1.png","atlas_bake_2.png","atlas_bake_3.png","atlas_bake_4.png"],
     tags: ["Python", "Blender API", "Bake Texture", "Add-on"],
     filterTags: "add-on python blender",
@@ -12,6 +12,18 @@ const CURRENT_PROJECTS = [
     viewLink: "",
     productLink: "https://superhivemarket.com/products/atlas-bake",
     documentationLink: "https://johndelta.github.io/atlas_bake_documentation/"
+  },
+  {
+    title: "Blender Git - A Blender Add-on for Git Version Control",
+    images: ["blender-git_0.gif","blender-git_1.png","blender-git_2.png","blender-git_3.png","blender-git_4.png"],
+    tags: ["Python", "Blender API", "Git", "Git LFS", "Add-on", "Version Control"],
+    filterTags: "add-on python blender git",
+    badge: "recent",
+    desc: "A Blender add-on that integrates Git-based version control directly into Blender's interface. Commit changes, manage branches, view history, and resolve merge conflicts without ever touching the terminal. Generates human-readable summaries of scene changes (e.g. \"Object 'Cube' moved\") by diffing JSON snapshots of .blend files.",
+    sourceLink: "",
+    viewLink: "",
+    productLink: "https://superhivemarket.com/products/blender-git",
+    documentationLink: "https://johndelta.github.io/blender_git_documentation/"
   }
 ];
 
@@ -102,9 +114,19 @@ const BACKLOG_PROJECTS = [
 
 const EXPERIENCE = [
   {
+    company: "Betsson Group · Athens, Greece",
+    role: "Backend .NET Software Engineer",
+    period: "May 2026 – Present",
+    bullets: [
+      "Building and maintaining scalable backend services using <strong>C# and .NET</strong> in a microservices architecture.",
+    ],
+    tags: ["C#", ".NET", "SQL Server", "RabbitMQ", "Git"],
+    dim: false
+  },
+  {
     company: "Dataverse Ltd. · Athens, Greece",
     role: "Software Engineer",
-    period: "Mar 2023 – Present",
+    period: "Mar 2023 – May 2026",
     bullets: [
       "Worked across a diverse stack including <strong>.NET Framework (4.x), .NET 8.x, ASP.NET (MVC, Razor Pages), JavaScript, CSS, HTML, SQL Server, MongoDB, RabbitMQ, Angular (v9 &amp; v19)</strong>.",
       "Resolved a wide range of <strong>bugs and development tasks</strong> across multiple systems, often <strong>taking ownership</strong> with minimal initial analysis and delivering under <strong>tight deadlines</strong>.",
@@ -114,7 +136,7 @@ const EXPERIENCE = [
       "Created <strong>data migration tools</strong> to import and transform data from external files or databases."
     ],
     tags: ["C#", ".NET Framework (4.x)", ".NET 8.x", "ASP.NET MVC", "Razor Pages", "React 18", "Angular 9/19", "Angular Material", "SQL Server", "MongoDB", "RabbitMQ", "EF/EF Core", "LINQ", "Git"],
-    dim: false
+    dim: true
   },
   {
     company: "Hellenic Armed Forces · Dept. of Informatics &amp; Research",
